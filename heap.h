@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <functional>
 #include <initializer_list>
 
 template <typename T>
@@ -16,11 +17,10 @@ class Heap {
 
         ~Heap() = default;
 
-        void setComp(bool (*comp_tmp) (const T&, const T&));
+        void setComp(std::function<bool(const T&, const T&) >tmp_comp);
 
         void push(const T& val);
         void pop();
-        void heapify(size_t index);
 
         T top() const;
 
@@ -31,15 +31,21 @@ class Heap {
         size_t size() const;
         bool empty() const;
 
-    protected:
+    private:
+        void heapify(size_t index, size_t size);
         void buildHeap();
 
-    protected:
+    private:
         std::vector<T> vec;
-        bool (*comp) (const T&, const T&);
+        std::function<bool(const T&, const T&)> min = [](int val1, int val2) -> bool {return val1 < val2;};
+        std::function<bool(const T&, const T&)> max = [](int val1, int val2) -> bool {return val1 > val2;};
+        std::function<bool(const T&, const T&)> comp;
 
     template<typename U>
     friend std::ostream& operator<<(std::ostream& os, const Heap<U>& heap);
+
+    template <typename U>
+    friend void heapSort(std::vector<U>& vec);
 };
 
 #include "heap.hpp"

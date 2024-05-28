@@ -12,15 +12,7 @@ std::ostream& operator<<(std::ostream& os, const Heap<T>& heap)
 template <typename T>
 Heap<T>::Heap(bool mode)
 {
-    if (!mode)
-    {
-        setComp([](const T& val1, const T& val2){return val1 > val2;});
-    }
-
-    else
-    {
-        setComp([](const T& val1, const T& val2){return val1 < val2;});
-    }
+    mode ? setComp(max) : setComp(min);
 }
 
 template <typename T>
@@ -28,23 +20,15 @@ Heap<T>::Heap(const std::initializer_list<T>& list , bool mode)
 {
     vec = list;
 
-    if (!mode)
-    {
-        setComp([](const T& val1, const T& val2){return val1 > val2;});
-    }
-
-    else
-    {
-        setComp([](const T& val1, const T& val2){return val1 < val2;});
-    }
+    mode ? setComp(max) : setComp(min);
 
     buildHeap();
 }
 
 template <typename T>
-void Heap<T>::setComp(bool (*comp_tmp) (const T& val1, const T& val2))
+void Heap<T>::setComp(std::function<bool(const T&, const T&)> tmp_comp)
 {
-    comp = comp_tmp;
+    comp = tmp_comp;
 }
 
 template <typename T>
@@ -52,32 +36,32 @@ void Heap<T>::buildHeap()
 {
     for (int i = vec.size() - 1; i >= 0; --i)
     {
-        heapify(i);
+        heapify(i, vec.size());
     }
 }
 
 template <typename T>
-void Heap<T>::heapify(size_t index)
+void Heap<T>::heapify(size_t index, size_t size)
 {
-    if (index < vec.size() / 2)
+    if (index < size / 2)
     {
-        size_t small_index = index;
+        size_t i = index;
         size_t left_index = left(index);
         size_t right_index = right(index);
-        if (comp(vec[index], vec[left_index]))
+        if (!comp(vec[i], vec[left_index]))
         {
-            small_index = left_index;
+            i = left_index;
         }
 
-        if (right_index < vec.size() && comp(vec[small_index], vec[right_index]))
+        if (right_index < size && !comp(vec[i], vec[right_index]))
         {
-            small_index = right_index;
+            i = right_index;
         }
     
-        if (small_index != index)
+        if (i != index)
         {
-            std::swap(vec[index], vec[small_index]);
-            heapify(small_index);
+            std::swap(vec[index], vec[i]);
+            heapify(i, size);
         }
     }
 }
@@ -90,7 +74,7 @@ void Heap<T>::push(const T& val)
     while (index > 0)
     {
         size_t parent_index = parent(index);
-        if (comp(vec[parent_index], vec[index]))
+        if (!comp(vec[parent_index], vec[index]))
         {
             std::swap(vec[index], vec[parent_index]);
             index = parent_index;
@@ -108,7 +92,7 @@ void Heap<T>::pop()
 {
     std::swap(vec[0], vec[vec.size() - 1]);
     vec.pop_back();
-    heapify(0);
+    heapify(0, vec.size());
 }
 
 template <typename T>
@@ -145,4 +129,21 @@ template <typename T>
 bool Heap<T>::empty() const
 {
     return vec.empty();
+}
+
+template <typename T>
+void heapSort(std::vector<T>& vec)
+{
+    Heap<T> heap(1);
+    heap.vec = std::move(vec);
+
+    heap.buildHeap();
+
+    for (int i = heap.size() - 1; i > 0; --i)
+    {
+        std::swap(heap.vec[0], heap.vec[i]);
+        heap.heapify(0, i);
+    }
+
+    vec = std::move(heap.vec);
 }
